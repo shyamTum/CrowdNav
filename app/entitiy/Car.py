@@ -57,6 +57,8 @@ class Car:
         if tick > Config.initialWaitTicks and self.smartCar:  # as we ignore the first 1000 ticks for this
             # add a route to the global registry
             CarRegistry.totalTrips += 1
+            totalTripFeedbackAverage=0
+            tripFeedback=0
             # add the duration for this route to the global tripAverage
             durationForTrip = (tick - self.currentRouteBeginTick)
             CarRegistry.totalTripAverage = addToAverage(CarRegistry.totalTrips,  # 100 for faster updates
@@ -76,15 +78,36 @@ class Car:
                     tripOverhead))
                 tripOverhead = 30
 
+            if tripOverhead==1:
+                    tripFeedback=5
+            if 1<tripOverhead<1.7:
+                    tripFeedback=4
+            if 1.7<=tripOverhead<=2.2:
+                    tripFeedback=3
+            if tripOverhead>2.2:
+                    tripFeedback = random.randint(1,2)
+
             CarRegistry.totalTripOverheadAverage = addToAverage(CarRegistry.totalTrips,
                                                                 CarRegistry.totalTripOverheadAverage,
                                                                 tripOverhead)
+
+            totalTripFeedbackAverage = addToAverage(CarRegistry.totalTrips,
+                                                                CarRegistry.totalTripFeedbackAverage,
+                                                                tripFeedback)
+            CarRegistry.totalTripFeedbackAverage = totalTripFeedbackAverage
+            CarRegistry.tripFeedback = tripFeedback
+            CarRegistry.overhead = tripOverhead
+
+
             CSVLogger.logEvent("overhead", [tick, self.sourceID, self.targetID, durationForTrip,
-                                            minimalCosts, tripOverhead, self.id, self.currentRouterResult.isVictim])
+                                            minimalCosts, tripOverhead, self.id, self.currentRouterResult.isVictim, CarRegistry.tripFeedback])
             # log to kafka
             msg = dict()
             msg["tick"] = tick
             msg["overhead"] = tripOverhead
+            msg["feedback"] = tripFeedback
+            msg["totalTripFeedbackAverage"] = CarRegistry.totalTripFeedbackAverage
+            msg["minimalCost"] = minimalCosts
             RTXForword.publish(msg, Config.kafkaTopicTrips)
         # if car is still enabled, restart it in the simulation
         if self.disabled is False:
