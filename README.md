@@ -36,3 +36,21 @@ A first guide on how to use (i.e. adapt, measure, optimize) CrowdNav with the [R
 ### Notes
 
 * To let the system stabalize, no message is sent to kafka or CSV in the first 1000 ticks .
+
+
+### Further extension to add one output metric function Average feedback
+
+Logic for a new metric function added in the "app/entity/Car.py" file. The feedback is assumed as the user satisfaction result. Based on the tripOverhead a corresponding trip feedback is calculated. For the experiment purpose we consider the values from 1 to 5. As the feedback is calculated totally based on the overhead, so the feedback calculation logic can be handled different way if there is significant changes in values for overheads. The piece of code showing the logic of feedback control can be shown below - 
+
+ ```
+ if tripOverhead==1:
+                    tripFeedback=5
+            if 1<tripOverhead<1.7:
+                    tripFeedback=4
+            if 1.7<=tripOverhead<=2.2:
+                    tripFeedback=3
+            if tripOverhead>2.2:
+                    tripFeedback = random.randint(1,2)
+ ```
+
+The individual feedback from each sample is collected and added to count the average feedback. After all sampling, the final average feedback is added to the kafka messaging. Apart from Average trip overhead, the Average trip feedback consists of discrete or categorical values from the categories of 1 to 5. 5 is the best feedback while 1 is the worst. 
